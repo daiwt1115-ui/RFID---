@@ -3,77 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <title>RFID信息 - 车管系统</title>
+
 <style>
-    body {
-        font-family: "Microsoft YaHei", Arial;
-        margin: 0;
-        background: #f5f5f5;
-    }
+body {
+    margin: 0;
+    background: #f2f2f2;
+    font-family: "Microsoft YaHei";
+}
 
-    .container {
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto;
-        background: #fff;
-        padding: 20px;
-        position: relative;
-        min-height: 600px;
-    }
+.container {
+    width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    position: relative;
+    min-height: 600px;
+}
 
-    /* 水印 */
-    .watermark {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        opacity: 0.25;
-        transform: rotate(-20deg);
-        display: flex;
-        flex-wrap: wrap;
-    }
+/* 水印 */
+.watermark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    transform: rotate(-20deg);
+    opacity: 0.25;
+    pointer-events: none;
+}
 
-    .watermark span {
-        width: 300px;
-        margin: 40px;
-        color: #2aa198;
-        font-size: 16px;
-    }
+.watermark div {
+    width: 220px;
+    margin: 40px;
+    color: #2aa198;
+    font-size: 14px;
+    line-height: 20px;
+}
 
-    h2 {
-        margin-top: 0;
-        color: #333;
-    }
+/* 信息区 */
+.info {
+    margin-top: 30px;
+    line-height: 40px;
+}
 
-    .info {
-        margin-top: 20px;
-        line-height: 40px;
-        font-size: 16px;
-    }
+.label {
+    display: inline-block;
+    width: 120px;
+    color: #555;
+}
 
-    .label {
-        display: inline-block;
-        width: 100px;
-        color: #555;
-    }
+.value {
+    color: #000;
+}
 
-    .value {
-        color: #000;
-    }
-
-    .anti {
-        margin-top: 10px;
-        border-top: 1px solid #eee;
-        padding-top: 10px;
-    }
-
-    canvas {
-        margin-top: 10px;
-        border-radius: 4px;
-    }
+canvas {
+    margin-top: 10px;
+}
 </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -81,74 +71,83 @@
     <!-- 水印 -->
     <div class="watermark" id="wm"></div>
 
-    <h2>RFID信息 - 车管系统</h2>
-
     <div class="info">
-        <div><span class="label">车牌号</span><span class="value">赣AK70935</span></div>
-        <div><span class="label">车主姓名</span><span class="value">赵*</span></div>
-        <div><span class="label">入网时间</span><span class="value">2024-06-15 13:14:35</span></div>
+        <div><span class="label">车牌号</span>赣AK70935</div>
+        <div><span class="label">车主姓名</span>赵*</div>
+        <div><span class="label">入网时间</span>2025-07-15 13:33:34</div>
     </div>
 
-    <div class="anti">
+    <div style="margin-top:20px;">
         <div class="label">防伪图片</div>
-        <canvas id="canvas" width="600" height="120"></canvas>
+        <canvas id="cvs" width="600" height="120"></canvas>
     </div>
 
 </div>
 
 <script>
-/* ===== 水印生成（固定时间，不刷新） ===== */
-const wm = document.getElementById("wm");
-const text = "赣AK70935 
-                    2026-05-02 20:14:53";
 
-for (let i = 0; i < 30; i++) {
-    let span = document.createElement("span");
-    span.innerText = text;
-    wm.appendChild(span);
+/* ====== 生成扫码时间（只生成一次） ====== */
+function getNow() {
+    let d = new Date();
+    let pad = n => n.toString().padStart(2, '0');
+    return d.getFullYear() + "-" +
+        pad(d.getMonth()+1) + "-" +
+        pad(d.getDate()) + " " +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds());
 }
 
-/* ===== 防伪图生成 ===== */
-const canvas = document.getElementById("canvas");
+const scanTime = getNow();
+
+/* ====== 水印 ====== */
+const wm = document.getElementById("wm");
+
+for(let i=0;i<28;i++){
+    let div = document.createElement("div");
+    div.innerHTML = "赣AK70935<br>" + scanTime;
+    wm.appendChild(div);
+}
+
+/* ====== 防伪图（高仿版） ====== */
+const canvas = document.getElementById("cvs");
 const ctx = canvas.getContext("2d");
 
-// 背景
+/* 背景 */
 ctx.fillStyle = "#fff";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.fillRect(0,0,600,120);
 
-// 随机线条
-for (let i = 0; i < 20; i++) {
-    ctx.strokeStyle = "rgba(0,0,255,0.5)";
+/* 多层波浪线 */
+for(let j=0;j<6;j++){
     ctx.beginPath();
-    ctx.moveTo(Math.random()*600, Math.random()*120);
-    ctx.lineTo(Math.random()*600, Math.random()*120);
-    ctx.stroke();
-}
-
-// 波浪线
-for (let i = 0; i < 5; i++) {
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(0,150,255,0.6)";
-    for (let x = 0; x < 600; x++) {
-        let y = 60 + Math.sin((x+i*20)*0.05)*20;
-        ctx.lineTo(x, y);
+    ctx.strokeStyle = "rgba(0,120,255,0.6)";
+    for(let x=0;x<600;x++){
+        let y = 60 + Math.sin((x+j*15)*0.04)*20;
+        ctx.lineTo(x,y);
     }
     ctx.stroke();
 }
 
-// 圆圈干扰
-for (let i = 0; i < 20; i++) {
+/* 圆圈轨迹 */
+for(let i=0;i<40;i++){
     ctx.beginPath();
     ctx.strokeStyle = "rgba(0,0,255,0.4)";
-    ctx.arc(Math.random()*600, Math.random()*120, 10, 0, Math.PI*2);
+    ctx.arc(
+        Math.random()*600,
+        Math.random()*120,
+        8,
+        0,
+        Math.PI*2
+    );
     ctx.stroke();
 }
 
-// 中间文字
+/* 中间红字 */
 ctx.font = "bold 36px Arial";
 ctx.fillStyle = "rgba(150,0,0,0.9)";
 ctx.textAlign = "center";
-ctx.fillText("赣AK70935", 300, 70);
+ctx.fillText("赣AK70935",300,70);
+
 </script>
 
 </body>
