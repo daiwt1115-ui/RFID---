@@ -50,17 +50,22 @@ body{
 }
 
 /* ===== 内容 ===== */
-.container{
-    position:absolute;
-    top:27px;   /* ← 上移2倍 */
-    left:28px;  /* ← 左移2倍 */
-    z-index:10;
-}
+ .container {
+        position: absolute;
+        top: 27px;
+        left: 28px;        /* 左边缩进28px */
+        width: calc(100vw - 56px);   /* 宽度铺满剩余屏幕 → 右边自然缩进28px */
+        z-index: 10;
+        background: transparent;
+    }
 
-.item{
-    line-height:43.5px;
-    border-bottom:1px solid #ddd;
-}
+    /* 每一条信息项 + 底部灰色边框 (边框会撑满整个 .container 宽度) */
+    .item {
+        line-height: 43.5px;
+        border-bottom: 1px solid rgba(221, 221, 221, 0.5);;   /* 灰色下边框 */
+        width: 100%;                    /* 继承父容器宽度，确保铺满 */
+        box-sizing: border-box;
+    }
 
 .label{
     display:inline-block;
@@ -74,17 +79,68 @@ body{
     font-family:Arial,"Microsoft YaHei";
 }
 
-/* 防伪 */
-.anti{
-    margin-top:8px;
-}
+    /* ========= 防伪图片专属区域 ========= 
+       1. 高度可调节（用户可通过修改 .anti 的 margin-bottom 或 padding-top 控制额外高度）
+       2. 图片左端对齐上方三行的 “赵*” 或 “2025-07-...” 的起始位置（即 .label 右侧）
+       3. 图片宽度可调节（用户直接修改下方 .anti img 的 width 属性即可）
+    */
+    .anti {
+        /* 防伪图片行整体高度调节说明：
+           想要增加这一行的整体高度（增加图片下方的留白或行间距），请修改下方 margin-bottom 数值
+           数值越大，该行与后续内容（虽然目前无后续，但视觉上本项更高）留白越多。
+           默认设20px，让行高略舒适；用户可随意改为 5px, 30px, 50px 等。
+        */
+        margin-bottom: 0px;   /* ← 调节防伪图片行高度：增大该值 ⇒ 行高度更高；减小则更紧凑 */
+        
+        /* 同时保留上方的常规行距，也可以通过 padding-top 调整顶部空隙，按需自行添加。这里不加额外干预 */
+    }
 
-img{
-    width:600px;
-}
+    /* 图片样式：对齐 + 宽度可调节 */
+    .anti img {
+        display: block;                /* 块级化，便于设置 margin 及宽高 */
+        margin-left: 92px;            /* 关键对齐：让图片左端与上方“赵*”以及日期左端完全对齐 (85px 正好等于 .label 宽度) */
+        
+        /* 图片宽度调节说明：
+           请直接修改下方的 width 数值，支持 px / rem / % 等任意单位。
+           为了保证大屏幕内图片不溢出右侧缩进区域，同时增加了 max-width 安全限制（可一并调节）。
+        */
+        width: 420px;                 /* ← 可调节图片长度，默认420px，用户随意改为 300px / 500px / 80% 等 */
+        max-width: calc(100% - 85px); /* 保证图片不会突破右侧缩进边界（自适应安全性） */
+        height: auto;                /* 保持比例 */
+        margin-top: 0px;             /* 与上方“防伪图片”文字留一点呼吸感（不影响整体高度调节） */
+        margin-bottom: 0px;          /* 下端留白，配合 .anti 的 margin-bottom 可叠加效果 */
+    }
+
+    /* 可选：若想进一步提升防伪图片行内部空间，用户可自行给 .anti 增加 padding-top/padding-bottom
+       例如取消下面注释即可灵活调整 */
+    /*
+    .anti {
+        padding-bottom: 15px;
+    }
+    */
+
+    /* 提示信息（不用显示，仅用于帮助文档，不干扰视图） */
+    .adjust-note {
+        display: none;
+    }
+
+    /* 原有图片占位确保没有内联宽高干扰 */
+    img {
+        border: 0;
+    }
+
+    /* 响应式微调：极小屏幕下图片自动适配，依然保持对齐 */
+    @media (max-width: 640px) {
+        .anti img {
+            width: 280px;       /* 小屏默认稍小，用户仍可任意覆盖调节 */
+            max-width: calc(100% - 85px);
+        }
+        .label {
+            width: 85px;        /* 固定不变以保证对齐 */
+        }
+    }
 </style>
 </head>
-
 <body>
 
 <!-- 水印 -->
