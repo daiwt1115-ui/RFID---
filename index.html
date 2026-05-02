@@ -1,50 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <title>车辆信息</title>
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial;
-            background: #f5f5f5;
-        }
-        .box {
-            margin-top: 100px;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            display: inline-block;
-        }
-        h1 {
-            color: #333;
-        }
-        .plate {
-            font-size: 40px;
-            color: #007bff;
-            margin: 20px 0;
-        }
-        .time {
-            color: gray;
-        }
-    </style>
-</head>
+<meta charset="UTF-8">
+<title>RFID信息 - 车管系统</title>
+<style>
+    body {
+        font-family: "Microsoft YaHei", Arial;
+        margin: 0;
+        background: #f5f5f5;
+    }
 
+    .container {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        position: relative;
+        min-height: 600px;
+    }
+
+    /* 水印 */
+    .watermark {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        opacity: 0.25;
+        transform: rotate(-20deg);
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .watermark span {
+        width: 300px;
+        margin: 40px;
+        color: #2aa198;
+        font-size: 16px;
+    }
+
+    h2 {
+        margin-top: 0;
+        color: #333;
+    }
+
+    .info {
+        margin-top: 20px;
+        line-height: 40px;
+        font-size: 16px;
+    }
+
+    .label {
+        display: inline-block;
+        width: 100px;
+        color: #555;
+    }
+
+    .value {
+        color: #000;
+    }
+
+    .anti {
+        margin-top: 10px;
+        border-top: 1px solid #eee;
+        padding-top: 10px;
+    }
+
+    canvas {
+        margin-top: 10px;
+        border-radius: 4px;
+    }
+</style>
+</head>
 <body>
-<div class="box">
-    <h1>车辆信息</h1>
-    <div class="plate">赣AK70935</div>
-    <div class="time" id="time"></div>
+
+<div class="container">
+
+    <!-- 水印 -->
+    <div class="watermark" id="wm"></div>
+
+    <h2>RFID信息 - 车管系统</h2>
+
+    <div class="info">
+        <div><span class="label">车牌号</span><span class="value">赣AK70935</span></div>
+        <div><span class="label">车主姓名</span><span class="value">赵*</span></div>
+        <div><span class="label">入网时间</span><span class="value">2024-06-15 13:14:35</span></div>
+    </div>
+
+    <div class="anti">
+        <div class="label">防伪图片</div>
+        <canvas id="canvas" width="600" height="120"></canvas>
+    </div>
+
 </div>
 
 <script>
-function updateTime(){
-    const now = new Date();
-    document.getElementById("time").innerText =
-        "当前时间：" + now.toLocaleString();
+/* ===== 水印生成（固定时间，不刷新） ===== */
+const wm = document.getElementById("wm");
+const text = "赣AK70935 
+                    2026-05-02 20:14:53";
+
+for (let i = 0; i < 30; i++) {
+    let span = document.createElement("span");
+    span.innerText = text;
+    wm.appendChild(span);
 }
-setInterval(updateTime,1000);
-updateTime();
+
+/* ===== 防伪图生成 ===== */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// 背景
+ctx.fillStyle = "#fff";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// 随机线条
+for (let i = 0; i < 20; i++) {
+    ctx.strokeStyle = "rgba(0,0,255,0.5)";
+    ctx.beginPath();
+    ctx.moveTo(Math.random()*600, Math.random()*120);
+    ctx.lineTo(Math.random()*600, Math.random()*120);
+    ctx.stroke();
+}
+
+// 波浪线
+for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(0,150,255,0.6)";
+    for (let x = 0; x < 600; x++) {
+        let y = 60 + Math.sin((x+i*20)*0.05)*20;
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+// 圆圈干扰
+for (let i = 0; i < 20; i++) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(0,0,255,0.4)";
+    ctx.arc(Math.random()*600, Math.random()*120, 10, 0, Math.PI*2);
+    ctx.stroke();
+}
+
+// 中间文字
+ctx.font = "bold 36px Arial";
+ctx.fillStyle = "rgba(150,0,0,0.9)";
+ctx.textAlign = "center";
+ctx.fillText("赣AK70935", 300, 70);
 </script>
 
 </body>
