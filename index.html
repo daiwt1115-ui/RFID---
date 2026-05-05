@@ -4,14 +4,69 @@
 <meta charset="UTF-8">
 <title>RFID信息 - 车管系统</title>
 
+<!-- 动态视口控制：电脑保持原始比例，手机端自动等比缩小 -->
+<script>
+(function() {
+    const MOBILE_SCALE = 0.85;   // 手机扫码时整体缩小至85%
+    
+    function isMobileDevice() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Windows Phone|Kindle|Silk/i;
+        if (mobileRegex.test(ua)) return true;
+        if (window.screen && window.screen.width <= 768) return true;
+        return false;
+    }
+    
+    function setViewportScale() {
+        let viewportMeta = document.querySelector('meta[name="viewport"]');
+        const isMobile = isMobileDevice();
+        
+        if (isMobile) {
+            const viewportContent = `width=device-width, initial-scale=${MOBILE_SCALE}, maximum-scale=2.0, user-scalable=yes`;
+            if (viewportMeta) {
+                viewportMeta.setAttribute('content', viewportContent);
+            } else {
+                viewportMeta = document.createElement('meta');
+                viewportMeta.name = 'viewport';
+                viewportMeta.content = viewportContent;
+                document.head.appendChild(viewportMeta);
+            }
+            document.documentElement.classList.add('mobile-scaled');
+        } else {
+            const desktopContent = 'width=device-width, initial-scale=1.0';
+            if (viewportMeta) {
+                viewportMeta.setAttribute('content', desktopContent);
+            } else {
+                viewportMeta = document.createElement('meta');
+                viewportMeta.name = 'viewport';
+                viewportMeta.content = desktopContent;
+                document.head.appendChild(viewportMeta);
+            }
+            document.documentElement.classList.add('desktop-full');
+        }
+    }
+    
+    setViewportScale();
+    
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            setViewportScale();
+        }, 150);
+    });
+})();
+</script>
+
 <style>
 body{
     margin:0;
     background:#f5f5f5;
-    font-family:"Microsoft YaHei";
+    font-family:"Microsoft YaHei", "微软雅黑", "PingFang SC", Helvetica, Arial, sans-serif;
+    overflow-x: auto;
 }
 
-/* ===== 水印（完全铺满） ===== */
+/* ===== 水印（完全铺满，文字左对齐 + 微软雅黑） ===== */
 .watermark{
     position:fixed;
     top:-5px;
@@ -22,185 +77,237 @@ body{
     grid-template-rows: repeat(5, 1fr);
     z-index:100;
     pointer-events:none;
+    overflow: hidden;
 }
 
 .row{
     display:grid;
     grid-template-columns: repeat(9, 1fr);
     align-items:flex-start;
-    justify-items:center;
+    justify-items:start;   /* 改为 start，让每个水印单元格内容从左侧开始排列，实现左对齐 */
 }
 
-/* 单个水印 */
+/* 单个水印 - 强制左对齐 + 微软雅黑 */
 .wm-item{
     color:#9ecdbc;
     font-size:18px;
     transform:rotate(-20deg);
     opacity:0.85;
-    font-family:"Microsoft YaHei";
+    font-family:"Microsoft YaHei", "微软雅黑", monospace;  /* 确保微软雅黑优先 */
     line-height:27px;
+    white-space: normal;
+    text-align: left;      /* 文本左对齐，车牌和时间均靠左 */
+    width: 100%;
 }
 
-/* 时间裁切（只轻微裁最后一位） */
+/* 时间样式：完整显示无裁切 */
 .time{
     display:inline-block;
-    width:186.5px;   /* 控制裁切程度（关键参数） */
-    overflow:hidden;
-    white-space:nowrap;
+    white-space: nowrap;
+    font-family: inherit;  /* 继承微软雅黑 */
 }
 
-/* ===== 内容 ===== */
- .container {
-        position: absolute;
-        top: 27px;
-        left: 28px;        /* 左边缩进28px */
-        width: calc(100vw - 56px);   /* 宽度铺满剩余屏幕 → 右边自然缩进28px */
-        z-index: 10;
-        background: transparent;
-    }
+/* ===== 内容区域（车辆信息） ===== */
+.container {
+    position: absolute;
+    top: 27px;
+    left: 28px;
+    width: calc(100vw - 56px);
+    z-index: 10;
+    background: transparent;
+}
 
-    /* 每一条信息项 + 底部灰色边框 (边框会撑满整个 .container 宽度) */
-    .item {
-        line-height: 43.5px;
-        border-bottom: 1px solid rgba(221, 221, 221, 0.5);;   /* 灰色下边框 */
-        width: 100%;                    /* 继承父容器宽度，确保铺满 */
-        box-sizing: border-box;
-    }
+.item {
+    line-height: 43.5px;
+    border-bottom: 1px solid rgba(221, 221, 221, 0.5);
+    width: 100%;
+    box-sizing: border-box;
+}
 
 .label{
     display:inline-block;
     width:85px;
     font-size:14px;
     color:#555;
+    vertical-align: top;
+    font-family: "Microsoft YaHei", "微软雅黑";
 }
 
 .value{
     font-size:14px;
-    font-family:Arial,"Microsoft YaHei";
+    font-family: "Microsoft YaHei", Arial, sans-serif;
 }
 
-    /* ========= 防伪图片专属区域 ========= 
-       1. 高度可调节（用户可通过修改 .anti 的 margin-bottom 或 padding-top 控制额外高度）
-       2. 图片左端对齐上方三行的 “赵*” 或 “2025-07-...” 的起始位置（即 .label 右侧）
-       3. 图片宽度可调节（用户直接修改下方 .anti img 的 width 属性即可）
-    */
-    .anti {
-        /* 防伪图片行整体高度调节说明：
-           想要增加这一行的整体高度（增加图片下方的留白或行间距），请修改下方 margin-bottom 数值
-           数值越大，该行与后续内容（虽然目前无后续，但视觉上本项更高）留白越多。
-           默认设20px，让行高略舒适；用户可随意改为 5px, 30px, 50px 等。
-        */
-        margin-bottom: 0px;   /* ← 调节防伪图片行高度：增大该值 ⇒ 行高度更高；减小则更紧凑 */
-        
-        /* 同时保留上方的常规行距，也可以通过 padding-top 调整顶部空隙，按需自行添加。这里不加额外干预 */
-    }
+/* ========= 防伪图片区域（电脑端默认样式） ========= */
+.anti {
+    margin-bottom: 0px;
+}
 
-    /* 图片样式：对齐 + 宽度可调节 */
-    .anti img {
-        display: block;                /* 块级化，便于设置 margin 及宽高 */
-        margin-left: 90px;            /* 关键对齐：让图片左端与上方“赵*”以及日期左端完全对齐 (85px 正好等于 .label 宽度) */
-        
-        /* 图片宽度调节说明：
-           请直接修改下方的 width 数值，支持 px / rem / % 等任意单位。
-           为了保证大屏幕内图片不溢出右侧缩进区域，同时增加了 max-width 安全限制（可一并调节）。
-        */
-        width: 595px;                 /* ← 可调节图片长度，默认420px，用户随意改为 300px / 500px / 80% 等 */
-        max-width: calc(100% - 90px); /* 保证图片不会突破右侧缩进边界（自适应安全性） */
-        height: 105px;                /* 保持比例 */
-        margin-top: -37px;             /* 与上方“防伪图片”文字留一点呼吸感（不影响整体高度调节） */
-        margin-bottom: 14px;          /* 下端留白，配合 .anti 的 margin-bottom 可叠加效果 */
-    }
+.anti img {
+    display: block;
+    margin-left: 90px;
+    width: 595px;
+    max-width: calc(100% - 90px);
+    height: 105px;
+    object-fit: contain;
+    margin-top: -37px;
+    margin-bottom: 14px;
+    background: #fafafa;
+}
 
-    /* 可选：若想进一步提升防伪图片行内部空间，用户可自行给 .anti 增加 padding-top/padding-bottom
-       例如取消下面注释即可灵活调整 */
-    /*
-    .anti {
-        padding-bottom: 15px;
-    }
-    */
+img {
+    border: 0;
+}
 
-    /* 提示信息（不用显示，仅用于帮助文档，不干扰视图） */
-    .adjust-note {
+/* ========= 移动端专项优化（时间完整 + 防伪图片同行 + 手机端专属间距字体调整） ========= */
+@media (max-width: 768px) {
+    /* 水印区域保持左对齐，字体不变 */
+    .wm-item {
+        margin-left: 50px;
+        font-size: 19px;
+        line-height: 27px;
+        width:184px;
+        height:243px;
+        transform: rotate(-20deg);
+        text-align: left;
+    }
+    .time {
+        white-space: nowrap;
+        overflow: visible !important;
+        width: auto !important;
+    }
+    
+    /* ----- 手机端独有：前三个项目左边距扩大2.2倍，上边距扩大1.5倍，文字垂直居中 ----- */
+    /* 原左边距基础来自 .container left = 16px（下方覆盖为16px），扩大2.2倍约35.2px，增加左边距19.2px */
+    /* 原第一个项目上边距基础来自 .container top = 27px（下方覆盖为27px），扩大1.5倍约40.5px，增加上边距13.5px */
+    .container .item:first-child,
+    .container .item:nth-child(2),
+    .container .item:nth-child(3) {
+        margin-left: 19px;          /* 使左边距从原16px增至约35px（2.2倍） */
+        /* 确保垂直居中（line-height已保证，无需额外设置） */
+    }
+    .container .item:first-child {
+        margin-top: 13.5px;         /* 使上端距离从原27px增至约40.5px（1.5倍） */
+    }
+    
+    /* 调整所有标签字体大小，与右边的值字体一致（14px），同时防伪图片标签也增大但不居中（符合要求） */
+    .label {
+        font-size: 14px;            /* 原手机端为13px，现在调大至与.value相同 */
+    }
+    
+    /* 防伪图片同行修复（保持原有，不破坏居中相关） */
+    .anti br {
         display: none;
     }
-
-    /* 原有图片占位确保没有内联宽高干扰 */
-    img {
-        border: 0;
+    .anti {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: normal;
+        margin-top: 8px;
+        gap: 8px;
+        margin-bottom: 12px;
+        line-height: normal;
     }
-
-    /* 响应式微调：极小屏幕下图片自动适配，依然保持对齐 */
-    @media (max-width: 640px) {
+    .anti .label {
+        width: auto;
+        flex-shrink: 0;
+        line-height: 32px;
+    }
+    .anti img {
+        display: inline-block;
+        margin-left: 22px;
+        margin-top: 2px;
+        width: 355px;
+        max-width: 65%;
+        height: auto;
+        object-fit: contain;
+        margin-bottom: 12px;
+        vertical-align: middle;
+        flex-shrink: 1;
+    }
+    
+    @media (max-width: 480px) {
         .anti img {
-            width: 280px;       /* 小屏默认稍小，用户仍可任意覆盖调节 */
-            max-width: calc(100% - 85px);
-        }
-        .label {
-            width: 90px;        /* 固定不变以保证对齐 */
+            max-width: 70%;
         }
     }
+    
+    /* 保持原有 .container 位置（注意：前三个item已通过margin偏移，不影响防伪图片） */
+    .container {
+        left: 16px;
+        top: 27px;          /* 保持原顶部距离，第一项通过margin-top额外增加 */
+        width: calc(100vw - 32px);
+    }
+    .value {
+        font-size: 14px;     /* 确保右侧字体大小基准 */
+    }
+}
+
+/* 大电脑屏幕保持原始图片效果 */
+@media (min-width: 1024px) {
+    .anti img {
+        width: 595px;
+        height: 105px;
+        margin-left: 90px;
+        max-width: calc(100% - 90px);
+    }
+}
+
+.watermark {
+    pointer-events: none;
+}
 </style>
 </head>
 <body>
 
-<!-- 水印 -->
+<!-- 水印背景 -->
 <div class="watermark" id="wm"></div>
 
-<!-- 信息 -->
+<!-- 车辆信息 -->
 <div class="container">
-
     <div class="item">
         <span class="label">车牌号</span>
         <span class="value">赣AK70935</span>
     </div>
-
     <div class="item">
         <span class="label">车主姓名</span>
         <span class="value">戴*</span>
     </div>
-
     <div class="item">
         <span class="label">入网时间</span>
         <span class="value">2025-07-16 13:46:35</span>
     </div>
-
     <div class="item anti">
         <span class="label">防伪图片</span><br>
-        <img src="防伪.png">
+        <img src="防伪.png" alt="RFID防伪标识" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'120\' viewBox=\'0 0 400 120\'%3E%3Crect width=\'400\' height=\'120\' fill=\'%23e9ecef\'/%3E%3Ctext x=\'20\' y=\'50\' font-size=\'16\' fill=\'%23666\'%3E防伪图片示例%3C/text%3E%3Ctext x=\'20\' y=\'85\' font-size=\'14\' fill=\'%23999\'%3ERFID授权防伪印章%3C/text%3E%3C/svg%3E';">
     </div>
-
 </div>
 
 <script>
-
-/* ===== 扫码时间 ===== */
 function getNow(){
-    let d=new Date();
-    let p=n=>n.toString().padStart(2,'0');
-    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+
-           p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds());
+    let d = new Date();
+    let p = n => n.toString().padStart(2,'0');
+    return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " +
+           p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
 }
 
-let time=getNow();
-
-/* ===== 水印生成 ===== */
-let wm=document.getElementById("wm");
-
-for(let r=0;r<5;r++){
-    let row=document.createElement("div");
-    row.className="row";
-
-    for(let c=0;c<9;c++){
-        let div=document.createElement("div");
-        div.className="wm-item";
-        div.innerHTML="赣AK70935<br><span class='time'>"+time+"</span>";
-        row.appendChild(div);
+let currentTimestamp = getNow();
+const watermarkContainer = document.getElementById("wm");
+if (watermarkContainer) {
+    for(let r = 0; r < 5; r++){
+        let row = document.createElement("div");
+        row.className = "row";
+        for(let c = 0; c < 9; c++){
+            let div = document.createElement("div");
+            div.className = "wm-item";
+            div.innerHTML = "赣AK70935<br><span class='time'>"+currentTimestamp+"</span>";
+            row.appendChild(div);
+        }
+        watermarkContainer.appendChild(row);
     }
-
-    wm.appendChild(row);
 }
 
+console.log("✅ 水印字体已恢复微软雅黑 + 左端对齐 | 手机端时间完整显示 + 防伪图片同行布局 | 手机端前三个项目左边距/上边距已按要求扩大，标签字体已调大");
 </script>
-
 </body>
 </html>
